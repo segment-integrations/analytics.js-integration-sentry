@@ -9,7 +9,12 @@ describe('Sentry', function() {
   var sentry;
   var analytics;
   var options = {
-    config: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415'
+    config: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+    maxMessageLength: '',
+    includePaths: [],
+    ignoreErrors: [],
+    ignoreUrls: [],
+    logger: ''
   };
 
   beforeEach(function() {
@@ -43,6 +48,46 @@ describe('Sentry', function() {
         analytics.initialize();
         analytics.page();
         analytics.called(sentry.load);
+      });
+
+      it('should respect UI settings', function() {
+        sentry.options.logger = 'test';
+        analytics.assert.deepEqual(window.RavenConfig, {
+          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+          config: { logger: 'test' }
+        });
+      });
+
+      it('should convert arrays of strings', function() {
+        sentry.options.includePaths = ['/test1', '/test2'];
+        sentry.options.ignoreErrors = ['error!', 'what'];
+        sentry.options.ignoreUrls = ['segment.com'];
+
+        analytics.initialize();
+        analytics.assert.deepEqual(window.RavenConfig, {
+          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+          config: {
+            includePaths: [/\/test1/, /\/test2/],
+            ignoreErrors: [/error!/, /what/],
+            ignoreUrls: [/segment.com/]
+          }
+        });
+      });
+
+      it('should favor RavenConfig params overridden on the page', function() {
+        sentry.options.includePaths = ['/test1', '/test2'];
+        sentry.options.logger = 'test';
+
+        window.RavenConfig = {};
+        window.RavenConfig.config = {
+          includePaths: [/\/test3/, /\/test4/]
+        };
+
+        analytics.initialize();
+        analytics.assert.deepEqual(window.RavenConfig, {
+          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+          config: { logger: 'override', includePaths: [/\/test3/, /\/test4/] }
+        });
       });
     });
   });
