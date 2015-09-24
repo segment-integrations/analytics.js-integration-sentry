@@ -9,7 +9,11 @@ describe('Sentry', function() {
   var sentry;
   var analytics;
   var options = {
-    config: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415'
+    config: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+    maxMessageLength: 100,
+    ignoreErrors: [],
+    ignoreUrls: [],
+    logger: 'javascript'
   };
 
   beforeEach(function() {
@@ -30,7 +34,11 @@ describe('Sentry', function() {
   it('should have the right settings', function() {
     analytics.compare(Sentry, integration('Sentry')
       .global('Raven')
-      .option('config', ''));
+      .option('config', '')
+      .option('ignoreErrors', [])
+      .option('ignoreUrls', [])
+      .option('maxMessageLength', 100)
+      .option('logger', 'javascript'));
   });
 
   describe('before loading', function() {
@@ -43,6 +51,45 @@ describe('Sentry', function() {
         analytics.initialize();
         analytics.page();
         analytics.called(sentry.load);
+      });
+
+      it('should respect UI settings', function() {
+        sentry.options.logger = 'test';
+        sentry.options.ignoreErrors = ['testError'];
+        sentry.options.ignoreUrls = ['testUrl'];
+        sentry.options.maxMessageLength = 25;
+
+        analytics.initialize();
+        analytics.assert.deepEqual(window.RavenConfig, {
+          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+          config: {
+            logger: 'test',
+            ignoreErrors: ['testError'],
+            ignoreUrls: ['testUrl'],
+            maxMessageLength: 25
+          }
+        });
+      });
+
+      it('should favor RavenConfig params from Segment', function() {
+        sentry.options.ignoreUrls = ['/test1', '/test2'];
+        sentry.options.logger = 'override';
+
+        window.RavenConfig = {};
+        window.RavenConfig.config = {
+          includePaths: [/\/test3/, /\/test4/]
+        };
+
+        analytics.initialize();
+        analytics.assert.deepEqual(window.RavenConfig, {
+          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
+          config: {
+            logger: 'override',
+            maxMessageLength: 100,
+            includePaths: [/\/test3/, /\/test4/],
+            ignoreUrls: ['/test1', '/test2']
+          }
+        });
       });
     });
   });
