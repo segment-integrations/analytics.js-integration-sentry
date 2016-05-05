@@ -9,11 +9,15 @@ describe('Sentry', function() {
   var sentry;
   var analytics;
   var options = {
-    config: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
-    maxMessageLength: 100,
-    ignoreErrors: [],
-    ignoreUrls: [],
-    logger: 'javascript'
+    config: 'https://8152fdb57e8c4ec1b60d27745bda8cbd@app.getsentry.com/52723',
+    logger: 'development',
+    release: '721e41770371db95eee98ca2707686226b993eda',
+    serverName: 'B5372DB0-C21E-11E4-8DFC-AA07A5B093DB',
+    whitelistUrls: ['/getsentry\.com/', 'segment.com'],
+    ignoreErrors: ['fb_xd_fragment'],
+    ignoreUrls: ['/graph\.facebook\.com/', 'http://example.com/script2.js'],
+    includePaths: ['/https?:\/\/getsentry\.com/', '/https?:\/\/cdn\.getsentry\.com/'],
+    maxMessageLength: 50
   };
 
   beforeEach(function() {
@@ -34,11 +38,16 @@ describe('Sentry', function() {
   it('should have the right settings', function() {
     analytics.compare(Sentry, integration('Sentry')
       .global('Raven')
+      .global('RavenConfig')
       .option('config', '')
+      .option('serverName', null)
+      .option('release', null)
       .option('ignoreErrors', [])
       .option('ignoreUrls', [])
-      .option('maxMessageLength', 100)
-      .option('logger', 'javascript'));
+      .option('whitelistUrls', [])
+      .option('includePaths', [])
+      .option('maxMessageLength', null)
+      .option('logger', null));
   });
 
   describe('before loading', function() {
@@ -54,42 +63,32 @@ describe('Sentry', function() {
       });
 
       it('should respect UI settings', function() {
-        sentry.options.logger = 'test';
-        sentry.options.ignoreErrors = ['testError'];
-        sentry.options.ignoreUrls = ['testUrl'];
-        sentry.options.maxMessageLength = 25;
-
+        // https://github.com/getsentry/raven-js/blob/3.0.2/src/raven.js#L135-L138
+        var config = {
+          logger: options.logger,
+          release: options.release,
+          serverName: options.serverName,
+          whitelistUrls: options.whitelistUrls,
+          ignoreErrors: options.ignoreErrors,
+          ignoreUrls: options.ignoreUrls,
+          includePaths: options.includePaths,
+          maxMessageLength: options.maxMessageLength
+        };
         analytics.initialize();
-        analytics.assert.deepEqual(window.RavenConfig, {
-          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
-          config: {
-            logger: 'test',
-            ignoreErrors: ['testError'],
-            ignoreUrls: ['testUrl'],
-            maxMessageLength: 25
-          }
-        });
+        analytics.assert(window.RavenConfig.dsn === options.config);
+        analytics.assert.deepEqual(window.RavenConfig.config, config);
       });
 
-      it('should favor RavenConfig params from Segment', function() {
-        sentry.options.ignoreUrls = ['/test1', '/test2'];
-        sentry.options.logger = 'override';
-
-        window.RavenConfig = {};
-        window.RavenConfig.config = {
-          includePaths: [/\/test3/, /\/test4/]
-        };
-
+      it('should reject null settings', function() {
+        sentry.options.release = null;
         analytics.initialize();
-        analytics.assert.deepEqual(window.RavenConfig, {
-          dsn: 'https://daf6980a0ff243aa9406db1edd7bdedb@app.getsentry.com/25415',
-          config: {
-            logger: 'override',
-            maxMessageLength: 100,
-            includePaths: [/\/test3/, /\/test4/],
-            ignoreUrls: ['/test1', '/test2']
-          }
-        });
+        analytics.assert(!window.RavenConfig.config.release);
+      });
+
+      it('should reject empty array settings', function() {
+        sentry.options.ignoreUrls = [];
+        analytics.initialize();
+        analytics.assert(!window.RavenConfig.config.ignoreUrls);
       });
     });
   });
@@ -109,22 +108,22 @@ describe('Sentry', function() {
 
     describe('#identify', function() {
       beforeEach(function() {
-        analytics.stub(window.Raven, 'setUser');
+        analytics.stub(window.Raven, 'setUserContext');
       });
 
       it('should send an id', function() {
         analytics.identify('id');
-        analytics.called(window.Raven.setUser, { id: 'id' });
+        analytics.called(window.Raven.setUserContext, { id: 'id' });
       });
 
       it('should send traits', function() {
         analytics.identify({ trait: true });
-        analytics.called(window.Raven.setUser, { trait: true });
+        analytics.called(window.Raven.setUserContext, { trait: true });
       });
 
       it('should send an id and traits', function() {
         analytics.identify('id', { trait: true });
-        analytics.called(window.Raven.setUser, { id: 'id', trait: true });
+        analytics.called(window.Raven.setUserContext, { id: 'id', trait: true });
       });
     });
   });
