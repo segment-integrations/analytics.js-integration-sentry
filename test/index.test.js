@@ -105,8 +105,10 @@ describe('Sentry', function() {
 
       it('should clean arrays', function() {
         sentry.options.ignoreUrls = ['', 'foo'];
+        sentry.options.includePaths = ['', ''];
         analytics.initialize();
         analytics.assert(window.RavenConfig.config.ignoreUrls[0] === 'foo');
+        analytics.assert(!window.RavenConfig.config.includePaths);
       });
     });
   });
