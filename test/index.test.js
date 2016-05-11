@@ -85,10 +85,28 @@ describe('Sentry', function() {
         analytics.assert(!window.RavenConfig.config.release);
       });
 
+      it('should reject empty strings', function() {
+        sentry.options.release = '';
+        analytics.initialize();
+        analytics.assert(!window.RavenConfig.config.release);
+      });
+
       it('should reject empty array settings', function() {
         sentry.options.ignoreUrls = [];
         analytics.initialize();
         analytics.assert(!window.RavenConfig.config.ignoreUrls);
+      });
+
+      it('should reject arrays that have empty strings', function() {
+        sentry.options.ignoreUrls = [''];
+        analytics.initialize();
+        analytics.assert(!window.RavenConfig.config.ignoreUrls);
+      });
+
+      it('should clean arrays', function() {
+        sentry.options.ignoreUrls = ['', 'foo'];
+        analytics.initialize();
+        analytics.assert(window.RavenConfig.config.ignoreUrls[0] === 'foo');
       });
     });
   });
