@@ -1,3 +1,11 @@
+2.1.0 / 2016-08-08
+==================
+
+  * Update raven.js to 3.3.0
+  * Update CONTRIBUTING.md
+  * Move Sauce Labs credentials into circle.yml
+  * Update Karma to 1.1.0
+
 2.0.0 / 2016-06-21
 ==================
 
