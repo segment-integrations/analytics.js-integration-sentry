@@ -18,7 +18,8 @@ describe('Sentry', function() {
     ignoreErrors: ['fb_xd_fragment'],
     ignoreUrls: ['/graph\.facebook\.com/', 'http://example.com/script2.js'],
     includePaths: ['/https?:\/\/getsentry\.com/', '/https?:\/\/cdn\.getsentry\.com/'],
-    maxMessageLength: 50
+    maxMessageLength: 50,
+    customVersionProperty: null
   };
 
   beforeEach(function() {
@@ -48,7 +49,8 @@ describe('Sentry', function() {
       .option('whitelistUrls', [])
       .option('includePaths', [])
       .option('maxMessageLength', null)
-      .option('logger', null));
+      .option('logger', null)
+      .option('customVersionProperty', null));
   });
 
   describe('before loading', function() {
@@ -76,6 +78,29 @@ describe('Sentry', function() {
           maxMessageLength: options.maxMessageLength
         };
         analytics.initialize();
+        analytics.assert(window.RavenConfig.dsn === options.config);
+        analytics.assert.deepEqual(window.RavenConfig.config, config);
+      });
+
+      it('should allow and set custom versions', function() {
+        var config = {
+          logger: options.logger,
+          serverName: options.serverName,
+          whitelistUrls: options.whitelistUrls,
+          ignoreErrors: options.ignoreErrors,
+          ignoreUrls: options.ignoreUrls,
+          includePaths: options.includePaths,
+          maxMessageLength: options.maxMessageLength,
+          release: '2.4.0'
+        };
+
+        sentry.options.customVersionProperty = 'my_custom_version_property';
+        window.my_custom_version_property = '2.4.0';
+        analytics.initialize();
+
+        // Need to delete before asserts to prevent leaking effects in case of failure.
+        delete window.my_custom_version_property;
+
         analytics.assert(window.RavenConfig.dsn === options.config);
         analytics.assert.deepEqual(window.RavenConfig.config, config);
       });
