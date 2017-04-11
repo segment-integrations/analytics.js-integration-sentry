@@ -19,7 +19,7 @@ describe('Sentry', function() {
     ignoreUrls: ['/graph\.facebook\.com/', 'http://example.com/script2.js'],
     includePaths: ['/https?:\/\/getsentry\.com/', '/https?:\/\/cdn\.getsentry\.com/'],
     maxMessageLength: 50,
-    customVersionProperty: 'my_custom_version_property'
+    customVersionProperty: null
   };
 
   beforeEach(function() {
@@ -94,6 +94,7 @@ describe('Sentry', function() {
           release: '2.4.0'
         };
 
+        sentry.options.customVersionProperty = 'my_custom_version_property';
         window.my_custom_version_property = '2.4.0';
         analytics.initialize();
 
