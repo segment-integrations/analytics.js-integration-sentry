@@ -1,3 +1,7 @@
+2.6.1 / 2017-07-17
+
+* Bumping version to trigger build
+
 2.6.0 / 2017-07-14
 
 * Update Raven JS tag to 3.17.0
