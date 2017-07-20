@@ -1,3 +1,7 @@
+2.6.2 / 2017-07-20
+
+* Bumping version again to trigger build
+
 2.6.1 / 2017-07-17
 
 * Bumping version to trigger build
